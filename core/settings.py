@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 import os
 from dotenv import load_dotenv
+import tempfile
 
 # ── Load environment variables ───────────────────────────────────
 load_dotenv()
@@ -74,6 +75,28 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 # ── Database ──────────────────────────────────────────────────────
+
+# ── SSL Certificate Handler ───────────────────────────────────────
+CA_CERT_CONTENT = os.getenv('DB_CA_CERT')
+LOCAL_CA_PATH   = os.path.join(BASE_DIR, 'ca.pem')
+
+if CA_CERT_CONTENT:
+    # Production — write cert from env variable to temp file
+    cert_file = tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix='.pem',
+        mode='w'
+    )
+    cert_file.write(CA_CERT_CONTENT)
+    cert_file.close()
+    SSL_CA_PATH = cert_file.name
+elif os.path.exists(LOCAL_CA_PATH):
+    # Development — use local ca.pem file
+    SSL_CA_PATH = LOCAL_CA_PATH
+else:
+    SSL_CA_PATH = None
+
+# ── Database ──────────────────────────────────────────────────────
 DATABASES = {
     'default': {
         'ENGINE'  : 'django.db.backends.mysql',
@@ -81,9 +104,10 @@ DATABASES = {
         'USER'    : os.getenv('DB_USER'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST'    : os.getenv('DB_HOST'),
-        'PORT'    : os.getenv('DB_PORT', '3306'),
+        'PORT'    : os.getenv('DB_PORT'),
         'OPTIONS' : {
-            'charset': 'utf8mb4',
+            'charset' : 'utf8mb4',
+            'ssl'     : {'ca': SSL_CA_PATH} if SSL_CA_PATH else {},
         },
     }
 }

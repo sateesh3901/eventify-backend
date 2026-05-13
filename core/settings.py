@@ -105,10 +105,6 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST'    : os.getenv('DB_HOST'),
         'PORT'    : os.getenv('DB_PORT'),
-        'OPTIONS' : {
-            'charset' : 'utf8mb4',
-            'ssl'     : {'ca': SSL_CA_PATH} if SSL_CA_PATH else {},
-        },
     }
 }
 
